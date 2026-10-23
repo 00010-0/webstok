@@ -1,0 +1,582 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#f5f7fb">
+  <meta name="description" content="TUCLUB ayuda a organizar socios, cuotas, stock y ventas del club. Cada venta actualiza existencias y queda asociada a su socio.">
+  <meta property="og:title" content="TUCLUB — El club y su stock, en orden">
+  <meta property="og:description" content="Socios, cuotas, productos y ventas del club conectados en un mismo sitio.">
+  <title>TUCLUB — El stock del club, en orden</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='19' fill='%230A84FF'/%3E%3Cpath d='m32 13 18 10v20L32 53 14 43V23l18-10Z' fill='none' stroke='white' stroke-width='3' stroke-linejoin='round'/%3E%3Cpath d='m15 23 17 10 17-10M32 33v19' fill='none' stroke='white' stroke-width='3' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f7fb;
+      --surface: #fff;
+      --surface-soft: #edf2f8;
+      --ink: #111827;
+      --muted: #687386;
+      --line: rgba(24, 39, 58, .1);
+      --blue: #087aff;
+      --blue-strong: #0667df;
+      --blue-soft: #e8f2ff;
+      --green: #23834b;
+      --green-soft: #e8f7ed;
+      --amber: #a66608;
+      --amber-soft: #fff4db;
+      --red: #be3c3b;
+      --lime: #c5f36a;
+      --shadow: 0 28px 90px rgba(36, 57, 87, .13), 0 3px 12px rgba(36, 57, 87, .06);
+      --shadow-soft: 0 12px 38px rgba(36, 57, 87, .08), 0 2px 8px rgba(36, 57, 87, .04);
+      --radius: 28px;
+      --ease: cubic-bezier(.2, .75, .25, 1);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        color-scheme: dark;
+        --bg: #101318;
+        --surface: #191e26;
+        --surface-soft: #222a35;
+        --ink: #f4f7fb;
+        --muted: #a1adbd;
+        --line: rgba(227, 237, 250, .11);
+        --blue: #4b9cff;
+        --blue-strong: #72b2ff;
+        --blue-soft: #182c45;
+        --green: #6ed99a;
+        --green-soft: #173326;
+        --amber: #f2bd59;
+        --amber-soft: #382c18;
+        --red: #ff8580;
+        --lime: #c5f36a;
+        --shadow: 0 30px 90px rgba(0, 0, 0, .4), 0 3px 12px rgba(0, 0, 0, .22);
+        --shadow-soft: 0 14px 38px rgba(0, 0, 0, .24), 0 2px 8px rgba(0, 0, 0, .15);
+      }
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-padding-top: 92px; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", system-ui, "Segoe UI", sans-serif;
+      font-size: 16px;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; }
+    a:focus-visible, button:focus-visible, summary:focus-visible { outline: 3px solid var(--blue); outline-offset: 4px; }
+    .skip-link:focus-visible { position: fixed !important; top: 10px; left: 10px !important; }
+    .wrap { width: min(1160px, calc(100% - 48px)); margin-inline: auto; }
+    .site-header {
+      position: sticky; top: 0; z-index: 20;
+      border-bottom: 1px solid var(--line);
+      background: color-mix(in srgb, var(--bg) 78%, transparent);
+      -webkit-backdrop-filter: blur(22px) saturate(1.6);
+      backdrop-filter: blur(22px) saturate(1.6);
+    }
+    .nav { display: flex; align-items: center; justify-content: space-between; min-height: 76px; gap: 24px; }
+    .brand { display: inline-flex; align-items: center; gap: 11px; flex: 0 0 auto; }
+    .brand-mark { display: grid; width: 42px; height: 42px; place-items: center; border-radius: 14px; color: white; background: linear-gradient(145deg, #45b7ff, var(--blue) 68%); box-shadow: 0 6px 18px rgba(8, 122, 255, .25); }
+    .brand-mark svg { width: 25px; height: 25px; }
+    .brand-name { display: block; font-size: 16px; font-weight: 800; letter-spacing: .09em; line-height: 1.05; }
+    .brand-caption { display: block; margin-top: 4px; color: var(--muted); font-size: 9px; font-weight: 700; letter-spacing: .13em; }
+    .nav-links { display: flex; align-items: center; gap: clamp(18px, 3vw, 34px); color: var(--muted); font-size: 13px; font-weight: 600; }
+    .nav-links a:not(.button):hover, .footer-links a:hover { color: var(--blue); }
+    .button {
+      display: inline-flex; min-height: 50px; align-items: center; justify-content: center; gap: 10px;
+      padding: 0 21px; border: 1px solid transparent; border-radius: 999px;
+      background: var(--blue); color: white; font-size: 14px; font-weight: 700;
+      box-shadow: 0 7px 17px rgba(8, 122, 255, .19);
+      transition: transform .2s var(--ease), background .2s ease, box-shadow .2s ease;
+    }
+    .button:hover { transform: translateY(-2px); background: var(--blue-strong); box-shadow: 0 11px 24px rgba(8, 122, 255, .24); }
+    .button svg { width: 17px; height: 17px; }
+    .button-small { min-height: 42px; padding-inline: 17px; font-size: 12px; }
+    .button-quiet { background: var(--surface); color: var(--ink); border-color: var(--line); box-shadow: none; }
+    .button-quiet:hover { background: var(--surface-soft); box-shadow: none; }
+    .menu-toggle { display: none; width: 44px; height: 44px; place-items: center; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--ink); }
+    .menu-toggle svg { width: 21px; height: 21px; }
+
+    .hero { position: relative; overflow: hidden; padding: clamp(72px, 10vw, 126px) 0 70px; }
+    .hero::before, .hero::after { position: absolute; z-index: -1; content: ""; border-radius: 50%; filter: blur(1px); pointer-events: none; }
+    .hero::before { width: 510px; height: 510px; top: -250px; right: -70px; background: radial-gradient(circle, rgba(10,132,255,.14), transparent 68%); }
+    .hero::after { width: 390px; height: 390px; left: -280px; bottom: -150px; background: radial-gradient(circle, rgba(197,243,106,.16), transparent 70%); }
+    .hero-grid { display: grid; grid-template-columns: minmax(0, .9fr) minmax(480px, 1.1fr); align-items: center; gap: clamp(46px, 7vw, 92px); }
+    .eyebrow { display: inline-flex; align-items: center; gap: 9px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 999px; background: color-mix(in srgb, var(--surface) 74%, transparent); color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+    .eyebrow-dot { width: 7px; height: 7px; border-radius: 99px; background: var(--lime); box-shadow: 0 0 0 4px color-mix(in srgb, var(--lime) 28%, transparent); }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { max-width: 660px; margin: 23px 0 20px; font-size: clamp(52px, 7.6vw, 91px); font-weight: 760; line-height: .99; letter-spacing: -.075em; }
+    .text-blue { color: var(--blue); }
+    .hero-lede { max-width: 500px; margin-bottom: 28px; color: var(--muted); font-size: clamp(17px, 1.65vw, 20px); line-height: 1.55; }
+    .hero-lede strong { color: var(--ink); font-weight: 650; }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+    .trust-note { display: flex; align-items: center; gap: 8px; margin-top: 20px; color: var(--muted); font-size: 12px; }
+    .trust-note svg { width: 16px; height: 16px; color: var(--green); }
+    .hero-visual { position: relative; min-width: 0; perspective: 1100px; }
+    .visual-glow { position: absolute; width: 80%; height: 60%; top: 18%; left: 10%; border-radius: 50%; background: rgba(50, 137, 255, .15); filter: blur(60px); }
+    .app-window { position: relative; padding: 12px; border: 1px solid color-mix(in srgb, var(--surface) 72%, var(--line)); border-radius: 26px; background: color-mix(in srgb, var(--surface) 80%, transparent); box-shadow: var(--shadow); transform: rotateY(-5deg) rotateX(2deg); transform-origin: center; }
+    .window-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 8px 13px; }
+    .window-dots { display: flex; gap: 6px; }
+    .window-dots i { width: 8px; height: 8px; border-radius: 50%; background: #ff6058; }
+    .window-dots i:nth-child(2) { background: #ffbd2e; }
+    .window-dots i:nth-child(3) { background: #28c840; }
+    .window-title { color: var(--muted); font-size: 10px; font-weight: 650; letter-spacing: .04em; }
+    .demo-flag { display: inline-flex; align-items: center; gap: 5px; padding: 5px 8px; border-radius: 8px; background: var(--amber-soft); color: var(--amber); font-size: 9px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
+    .demo-flag svg { width: 12px; height: 12px; }
+    .dashboard { padding: clamp(17px, 2vw, 24px); border: 1px solid var(--line); border-radius: 18px; background: var(--bg); }
+    .dash-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 19px; }
+    .dash-heading p { margin: 0 0 4px; color: var(--muted); font-size: 10px; }
+    .dash-heading h2 { margin: 0; font-size: 21px; letter-spacing: -.045em; }
+    .dash-date { color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 9px; white-space: nowrap; }
+    .metric-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; margin-bottom: 12px; }
+    .metric { min-width: 0; padding: 12px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface); }
+    .metric-label { display: block; overflow: hidden; color: var(--muted); font-size: 9px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+    .metric-value { display: block; margin-top: 5px; font-size: 20px; font-weight: 750; letter-spacing: -.06em; }
+    .metric-value small { color: var(--muted); font-size: 10px; font-weight: 600; letter-spacing: 0; }
+    .dash-columns { display: grid; grid-template-columns: 1.15fr .85fr; gap: 10px; }
+    .dash-card { min-width: 0; padding: 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+    .dash-card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+    .dash-card-head strong { font-size: 11px; }
+    .dash-card-head span { color: var(--muted); font-size: 9px; }
+    .stock-item, .movement { display: flex; align-items: center; gap: 9px; min-width: 0; padding: 9px 0; border-top: 1px solid var(--line); }
+    .stock-icon, .move-icon { display: grid; width: 29px; height: 29px; flex: 0 0 auto; place-items: center; border-radius: 9px; background: var(--blue-soft); color: var(--blue); }
+    .stock-icon svg, .move-icon svg { width: 15px; height: 15px; }
+    .stock-info, .move-info { display: flex; min-width: 0; flex: 1; flex-direction: column; }
+    .stock-info strong, .move-info strong { overflow: hidden; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+    .stock-info small, .move-info small { color: var(--muted); font-size: 9px; }
+    .stock-count { flex: 0 0 auto; font-size: 10px; font-weight: 750; text-align: right; }
+    .stock-count small { display: block; margin-top: 2px; color: var(--amber); font-size: 8px; font-weight: 700; }
+    .move-icon.in { background: var(--green-soft); color: var(--green); }
+    .move-icon.out { background: var(--surface-soft); color: var(--ink); }
+    .move-value { flex: 0 0 auto; color: var(--green); font-size: 10px; font-weight: 750; }
+    .move-value.negative { color: var(--muted); }
+    .dash-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 11px; padding: 10px 12px; border-radius: 11px; background: var(--surface-soft); color: var(--muted); font-size: 9px; }
+    .dash-foot strong { color: var(--ink); font-weight: 700; }
+    .terminal-chip { position: absolute; right: -21px; bottom: 34px; display: flex; align-items: center; gap: 10px; padding: 12px 15px; border: 1px solid rgba(255,255,255,.14); border-radius: 14px; background: #111820; color: #f4f7fb; box-shadow: 0 17px 40px rgba(12, 21, 34, .28); transform: rotate(-2deg); }
+    .terminal-chip svg { width: 18px; height: 18px; color: var(--lime); }
+    .terminal-chip code { font: 10px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .terminal-chip b { color: var(--lime); font-weight: 600; }
+
+    .signal-band { padding: 20px 0; border-block: 1px solid var(--line); background: color-mix(in srgb, var(--surface) 58%, transparent); }
+    .signal-list { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+    .signal-label { color: var(--muted); font-size: 10px; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; }
+    .signal-item { display: inline-flex; align-items: center; gap: 8px; color: var(--ink); font-size: 12px; font-weight: 650; }
+    .signal-item svg { width: 17px; height: 17px; color: var(--blue); }
+
+    section.content-section { padding: clamp(78px, 10vw, 124px) 0; }
+    .section-head { max-width: 700px; margin: 0 auto 48px; text-align: center; }
+    .kicker { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 14px; color: var(--blue); font-size: 11px; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
+    .kicker::before { width: 18px; height: 2px; border-radius: 99px; background: var(--lime); content: ""; }
+    h2.section-title { margin-bottom: 14px; font-size: clamp(34px, 5vw, 57px); font-weight: 740; line-height: 1.04; letter-spacing: -.065em; }
+    .section-lede { max-width: 610px; margin: 0 auto; color: var(--muted); font-size: 17px; line-height: 1.65; }
+    .flow-wrap { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+    .flow-wrap::before { position: absolute; z-index: 0; top: 40px; right: 15%; left: 15%; height: 1px; background: linear-gradient(90deg, var(--line), var(--blue), var(--lime)); content: ""; }
+    .flow-card { position: relative; z-index: 1; padding: 25px; border: 1px solid var(--line); border-radius: 21px; background: var(--surface); box-shadow: var(--shadow-soft); }
+    .flow-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
+    .flow-number { color: var(--muted); font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .flow-icon { display: grid; width: 45px; height: 45px; place-items: center; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--blue); box-shadow: 0 3px 12px rgba(30, 60, 100, .06); }
+    .flow-icon svg { width: 21px; height: 21px; }
+    .flow-card h3 { margin-bottom: 8px; font-size: 19px; letter-spacing: -.04em; }
+    .flow-card p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.65; }
+    .flow-card p strong { color: var(--ink); font-weight: 650; }
+    .section-dark { position: relative; overflow: hidden; padding: clamp(75px, 9vw, 112px) 0; background: #111820; color: #f5f8fb; }
+    .section-dark::after { position: absolute; width: 520px; height: 520px; right: -200px; bottom: -330px; border-radius: 50%; background: radial-gradient(circle, rgba(10,132,255,.24), transparent 66%); content: ""; }
+    .dark-grid { position: relative; z-index: 1; display: grid; grid-template-columns: .9fr 1.1fr; align-items: center; gap: clamp(42px, 8vw, 100px); }
+    .section-dark .kicker { color: #80bbff; }
+    .section-dark h2 { max-width: 520px; margin-bottom: 18px; font-size: clamp(36px, 5.4vw, 62px); line-height: 1.02; letter-spacing: -.065em; }
+    .section-dark p { max-width: 470px; color: #a9b5c3; font-size: 16px; line-height: 1.7; }
+    .dark-emphasis { color: white; }
+    .feature-list { display: grid; gap: 14px; margin: 27px 0 0; padding: 0; list-style: none; }
+    .feature-list li { display: flex; align-items: flex-start; gap: 11px; color: #d3dce7; font-size: 13px; }
+    .check { display: grid; width: 20px; height: 20px; flex: 0 0 auto; place-items: center; border-radius: 7px; background: rgba(197,243,106,.13); color: var(--lime); }
+    .check svg { width: 13px; height: 13px; }
+    .terminal-window { overflow: hidden; border: 1px solid rgba(255,255,255,.13); border-radius: 21px; background: #171f28; box-shadow: 0 35px 80px rgba(0,0,0,.3); }
+    .terminal-top { display: flex; align-items: center; gap: 7px; padding: 14px 17px; border-bottom: 1px solid rgba(255,255,255,.09); color: #98a5b5; font-size: 10px; }
+    .terminal-top i { width: 8px; height: 8px; border-radius: 50%; background: #ff6058; }
+    .terminal-top i:nth-child(2) { background: #ffbd2e; }
+    .terminal-top i:nth-child(3) { background: #28c840; }
+    .terminal-top span { margin-left: 7px; }
+    .terminal-body { padding: clamp(21px, 4vw, 35px); font: 12px/1.9 ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .terminal-line { display: flex; gap: 10px; flex-wrap: wrap; }
+    .terminal-prompt { color: var(--lime); }
+    .terminal-cmd { color: #f4f7fb; }
+    .terminal-output { margin: 3px 0 18px 21px; color: #a9b5c3; }
+    .terminal-output .positive { color: #75d89e; }
+    .terminal-output .attention { color: #f4bd5f; }
+    .terminal-status { display: flex; align-items: center; gap: 8px; margin-top: 24px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,.1); color: #a9b5c3; font: 10px ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 12px var(--lime); }
+    .features-section { background: var(--surface); }
+    .feature-layout { display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: clamp(40px, 8vw, 96px); }
+    .feature-copy h2 { max-width: 530px; margin-bottom: 17px; font-size: clamp(35px, 5vw, 56px); line-height: 1.03; letter-spacing: -.065em; }
+    .feature-copy > p { max-width: 480px; color: var(--muted); font-size: 16px; line-height: 1.7; }
+    .feature-points { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 25px; margin-top: 32px; }
+    .feature-point { padding-top: 14px; border-top: 1px solid var(--line); }
+    .feature-point strong { display: block; margin-bottom: 5px; font-size: 13px; }
+    .feature-point span { display: block; color: var(--muted); font-size: 12px; line-height: 1.55; }
+    .summary-card { position: relative; padding: 16px; border: 1px solid var(--line); border-radius: 23px; background: var(--bg); box-shadow: var(--shadow-soft); }
+    .summary-header { display: flex; align-items: center; justify-content: space-between; gap: 15px; margin-bottom: 12px; padding: 5px 3px; }
+    .summary-header strong { font-size: 13px; }
+    .summary-header span { color: var(--muted); font: 9px ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .summary-tile { margin-bottom: 10px; padding: 17px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
+    .summary-tile:last-child { margin-bottom: 0; }
+    .tile-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .tile-label { color: var(--muted); font-size: 10px; font-weight: 650; }
+    .tile-value { margin-top: 5px; font-size: 27px; font-weight: 760; letter-spacing: -.06em; }
+    .tile-hint { margin-top: 4px; color: var(--muted); font-size: 10px; }
+    .pill { display: inline-flex; align-items: center; gap: 5px; padding: 5px 8px; border-radius: 999px; background: var(--amber-soft); color: var(--amber); font-size: 9px; font-weight: 750; }
+    .pill.green { background: var(--green-soft); color: var(--green); }
+    .mini-bars { display: flex; height: 53px; align-items: end; gap: 7px; margin-top: 13px; }
+    .mini-bars i { flex: 1; min-height: 7px; border-radius: 5px 5px 2px 2px; background: color-mix(in srgb, var(--blue) 23%, var(--surface)); }
+    .mini-bars i:nth-child(1) { height: 35%; }.mini-bars i:nth-child(2) { height: 57%; }.mini-bars i:nth-child(3) { height: 43%; }.mini-bars i:nth-child(4) { height: 76%; }.mini-bars i:nth-child(5) { height: 62%; }.mini-bars i:nth-child(6) { height: 92%; background: var(--blue); }
+    .backup-row { display: flex; align-items: center; gap: 11px; }
+    .backup-icon { display: grid; width: 35px; height: 35px; place-items: center; border-radius: 11px; background: var(--blue-soft); color: var(--blue); }
+    .backup-icon svg { width: 17px; height: 17px; }
+    .backup-copy { flex: 1; }
+    .backup-copy strong { display: block; font-size: 11px; }
+    .backup-copy small { display: block; margin-top: 2px; color: var(--muted); font-size: 9px; }
+    .backup-arrow { color: var(--muted); font-size: 17px; }
+
+    .different { padding: clamp(75px, 9vw, 115px) 0; }
+    .different-top { display: flex; align-items: end; justify-content: space-between; gap: 28px; margin-bottom: 39px; }
+    .different-top h2 { max-width: 650px; margin-bottom: 0; font-size: clamp(36px, 5.3vw, 60px); line-height: 1.02; letter-spacing: -.067em; }
+    .different-top p { max-width: 310px; margin-bottom: 4px; color: var(--muted); font-size: 14px; line-height: 1.65; }
+    .advice-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 13px; }
+    .advice-card { min-height: 205px; padding: 23px; border: 1px solid var(--line); border-radius: 20px; background: var(--surface); }
+    .advice-number { display: inline-flex; width: 30px; height: 30px; align-items: center; justify-content: center; border-radius: 10px; background: var(--blue-soft); color: var(--blue); font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .advice-card:nth-child(2) .advice-number { background: var(--green-soft); color: var(--green); }
+    .advice-card:nth-child(3) .advice-number { background: var(--amber-soft); color: var(--amber); }
+    .advice-card h3 { margin: 23px 0 8px; font-size: 17px; letter-spacing: -.03em; }
+    .advice-card p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.65; }
+    .advice-note { display: flex; align-items: flex-start; gap: 11px; margin-top: 18px; padding: 16px 18px; border: 1px solid color-mix(in srgb, var(--lime) 40%, var(--line)); border-radius: 16px; background: color-mix(in srgb, var(--lime) 13%, var(--surface)); color: var(--muted); font-size: 12px; line-height: 1.6; }
+    .advice-note svg { width: 17px; height: 17px; flex: 0 0 auto; color: var(--green); }
+    .advice-note strong { color: var(--ink); }
+
+    .account-section { padding: 0 0 clamp(78px, 10vw, 125px); }
+    .account-panel { position: relative; overflow: hidden; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 30px; padding: clamp(30px, 6vw, 64px); border-radius: 30px; background: linear-gradient(120deg, #087aff, #416cf0 59%, #7957da); color: white; box-shadow: 0 24px 58px rgba(35, 98, 222, .22); }
+    .account-panel::after { position: absolute; width: 330px; height: 330px; right: 16%; bottom: -250px; border: 1px solid rgba(255,255,255,.2); border-radius: 50%; box-shadow: 0 0 0 35px rgba(255,255,255,.035), 0 0 0 70px rgba(255,255,255,.025); content: ""; }
+    .account-copy, .account-action { position: relative; z-index: 1; }
+    .account-copy .kicker { color: rgba(255,255,255,.82); }
+    .account-copy .kicker::before { background: var(--lime); }
+    .account-copy h2 { max-width: 670px; margin-bottom: 12px; font-size: clamp(32px, 4.5vw, 51px); line-height: 1.03; letter-spacing: -.06em; }
+    .account-copy p { max-width: 620px; margin: 0; color: rgba(255,255,255,.81); font-size: 15px; line-height: 1.65; }
+    .account-panel .button { background: white; color: #095ec3; box-shadow: 0 8px 22px rgba(0,0,0,.13); white-space: nowrap; }
+    .account-panel .button:hover { background: #eef6ff; }
+    .faq { padding: clamp(65px, 8vw, 100px) 0; border-top: 1px solid var(--line); background: color-mix(in srgb, var(--surface) 58%, transparent); }
+    .faq-grid { display: grid; grid-template-columns: .7fr 1.3fr; gap: clamp(35px, 8vw, 100px); }
+    .faq-intro h2 { margin-bottom: 13px; font-size: clamp(34px, 4.3vw, 48px); line-height: 1.04; letter-spacing: -.06em; }
+    .faq-intro p { color: var(--muted); font-size: 14px; line-height: 1.65; }
+    .faq-list details { border-bottom: 1px solid var(--line); }
+    .faq-list details:first-child { border-top: 1px solid var(--line); }
+    .faq-list summary { position: relative; padding: 19px 32px 19px 0; cursor: pointer; list-style: none; font-size: 14px; font-weight: 700; }
+    .faq-list summary::-webkit-details-marker { display: none; }
+    .faq-list summary::after { position: absolute; top: 50%; right: 2px; color: var(--blue); font-size: 20px; font-weight: 400; content: "+"; transform: translateY(-50%); }
+    .faq-list details[open] summary::after { content: "−"; }
+    .faq-list details p { max-width: 670px; margin: -3px 0 18px; color: var(--muted); font-size: 13px; line-height: 1.7; }
+    .faq-list details p strong { color: var(--ink); }
+    .site-footer { padding: 26px 0 32px; border-top: 1px solid var(--line); }
+    .footer-row { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+    .footer-brand { display: flex; align-items: center; gap: 9px; font-size: 12px; font-weight: 800; letter-spacing: .09em; }
+    .footer-brand .brand-mark { width: 31px; height: 31px; border-radius: 10px; }
+    .footer-brand .brand-mark svg { width: 19px; height: 19px; }
+    .footer-note { margin: 4px 0 0; color: var(--muted); font-size: 10px; }
+    .footer-links { display: flex; align-items: center; gap: 18px; color: var(--muted); font-size: 11px; font-weight: 600; }
+    .footer-links a:last-child { color: var(--blue); }
+    .disclaimer { margin-top: 15px; color: var(--muted); font-size: 10px; line-height: 1.55; }
+
+    @media (max-width: 960px) {
+      .hero-grid { grid-template-columns: 1fr; gap: 56px; }
+      .hero-copy { max-width: 740px; }
+      .hero-visual { width: min(680px, 100%); margin-inline: auto; }
+      .dark-grid { grid-template-columns: 1fr; gap: 40px; }
+      .dark-copy { max-width: 690px; }
+      .feature-layout { grid-template-columns: 1fr; gap: 38px; }
+      .feature-copy { max-width: 710px; }
+      .summary-card { width: min(600px, 100%); margin-inline: auto; }
+    }
+    @media (max-width: 700px) {
+      .wrap { width: min(100% - 34px, 560px); }
+      .nav { min-height: 67px; }
+      .menu-toggle { display: grid; }
+      .nav-links { position: absolute; top: calc(100% + 8px); right: 17px; left: 17px; display: none; align-items: stretch; flex-direction: column; gap: 0; padding: 9px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); box-shadow: var(--shadow-soft); }
+      .nav-links.open { display: flex; }
+      .nav-links > a:not(.button) { padding: 13px 12px; border-radius: 11px; }
+      .nav-links > a:not(.button):hover { background: var(--surface-soft); }
+      .nav-links .button { margin-top: 5px; }
+      .hero { padding: 67px 0 57px; }
+      h1 { font-size: clamp(51px, 14vw, 75px); }
+      .hero-lede { font-size: 16px; }
+      .hero-actions { align-items: stretch; flex-direction: column; }
+      .hero-actions .button { width: 100%; }
+      .app-window { padding: 8px; border-radius: 20px; transform: none; }
+      .dashboard { padding: 13px; border-radius: 15px; }
+      .window-top { padding: 5px 5px 10px; }
+      .window-title { font-size: 9px; }
+      .dash-heading h2 { font-size: 18px; }
+      .metric-row { gap: 6px; }
+      .metric { padding: 9px 8px; }
+      .metric-value { font-size: 17px; }
+      .metric-label { font-size: 8px; }
+      .dash-columns { grid-template-columns: 1fr; }
+      .dash-card { padding: 11px; }
+      .dash-columns .dash-card:nth-child(2) .movement:nth-of-type(3) { display: none; }
+      .terminal-chip { right: -4px; bottom: -25px; padding: 10px 12px; }
+      .signal-list { justify-content: flex-start; gap: 15px 21px; }
+      .signal-label { flex-basis: 100%; }
+      section.content-section { padding: 72px 0; }
+      .section-head { margin-bottom: 32px; text-align: left; }
+      .section-lede { margin: 0; font-size: 15px; }
+      .flow-wrap { grid-template-columns: 1fr; gap: 11px; }
+      .flow-wrap::before { top: 40px; bottom: 40px; left: 22px; width: 1px; height: auto; background: linear-gradient(180deg, var(--blue), var(--lime)); }
+      .flow-card { padding: 19px; }
+      .flow-top { margin-bottom: 17px; }
+      .flow-card h3 { font-size: 17px; }
+      .flow-card p { font-size: 13px; }
+      .section-dark { padding: 70px 0; }
+      .terminal-body { padding: 20px 17px; font-size: 10px; }
+      .feature-points { gap: 17px 15px; }
+      .feature-point span { font-size: 11px; }
+      .different-top { align-items: flex-start; flex-direction: column; gap: 14px; }
+      .different-top p { margin: 0; }
+      .advice-grid { grid-template-columns: 1fr; gap: 10px; }
+      .advice-card { min-height: 0; padding: 18px; }
+      .advice-card h3 { margin-top: 15px; }
+      .account-panel { grid-template-columns: 1fr; gap: 22px; padding: 29px 23px; border-radius: 23px; }
+      .account-panel .button { width: 100%; }
+      .faq-grid { grid-template-columns: 1fr; gap: 20px; }
+      .footer-row { align-items: flex-start; flex-direction: column; }
+      .footer-links { flex-wrap: wrap; gap: 12px 18px; }
+    }
+    @media (max-width: 370px) {
+      .wrap { width: calc(100% - 26px); }
+      .demo-flag { font-size: 8px; }
+      .dash-date { display: none; }
+      .stock-info strong, .move-info strong { font-size: 9px; }
+      .metric-value { font-size: 15px; }
+      .feature-points { grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+    }
+  </style>
+</head>
+<body>
+  <a href="#contenido" class="skip-link" style="position:absolute;left:-9999px;top:10px;z-index:99;padding:12px 16px;border-radius:10px;background:var(--surface);color:var(--ink)">Saltar al contenido</a>
+  <header class="site-header">
+    <div class="wrap nav">
+      <a class="brand" href="#inicio" aria-label="TUCLUB, inicio">
+        <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="m16 4 11 6.2v12.1L16 28 5 22.3V10.2L16 4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m5.5 10.5 10.5 6.1 10.5-6.1M16 16.7V28" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m11 7 11 6.2v4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".72"/></svg></span>
+        <span><span class="brand-name">TUCLUB</span><span class="brand-caption">GESTIÓN DEL CLUB</span></span>
+      </a>
+      <button class="menu-toggle" type="button" aria-label="Abrir menú" aria-expanded="false" aria-controls="nav-links">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+      <nav class="nav-links" id="nav-links" aria-label="Navegación principal">
+        <a href="#funciona">Cómo funciona</a>
+        <a href="#gestion">Qué organiza</a>
+        <a href="#diferente">Lo que la hace distinta</a>
+        <a class="button button-small" href="https://00010-0.github.io/supasu/#resumen" target="_blank" rel="noopener noreferrer">Abrir TUCLUB <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg></a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="contenido">
+    <section class="hero" id="inicio" aria-labelledby="hero-title">
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <span class="eyebrow"><span class="eyebrow-dot"></span> Socios · cuotas · stock · ventas</span>
+          <h1 id="hero-title">El stock del club,<br><span class="text-blue">en orden.</span></h1>
+          <p class="hero-lede">Organiza socios, cuotas y productos del bar o del almacén. <strong>Al registrar una venta, el stock se actualiza y la compra queda en el historial del socio.</strong></p>
+          <div class="hero-actions">
+            <a class="button" href="https://00010-0.github.io/supasu/#resumen" target="_blank" rel="noopener noreferrer">Entrar en la app <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg></a>
+            <a class="button button-quiet" href="#funciona">Ver cómo funciona <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14m-7-7 7 7 7-7"/></svg></a>
+          </div>
+          <p class="trust-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg> Una herramienta pensada para el día a día del club.</p>
+        </div>
+        <div class="hero-visual" aria-label="Vista ilustrativa del resumen de stock de TUCLUB">
+          <div class="visual-glow" aria-hidden="true"></div>
+          <div class="app-window">
+            <div class="window-top"><span class="window-dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="window-title">TUCLUB / RESUMEN</span><span class="demo-flag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v9m0 0 4-4m-4 4L8 8M5 14v5h14v-5"/></svg>Datos de ejemplo</span></div>
+            <div class="dashboard">
+              <div class="dash-heading"><div><p>GESTIÓN DEL CLUB</p><h2>El movimiento, a la vista.</h2></div><span class="dash-date">VISTA ILUSTRATIVA</span></div>
+              <div class="metric-row">
+                <div class="metric"><span class="metric-label">Productos</span><span class="metric-value">24 <small>en lista</small></span></div>
+                <div class="metric"><span class="metric-label">Por reponer</span><span class="metric-value" style="color:var(--amber)">03 <small>productos</small></span></div>
+                <div class="metric"><span class="metric-label">Ventas pendientes</span><span class="metric-value">02 <small>por cobrar</small></span></div>
+              </div>
+              <div class="dash-columns">
+                <div class="dash-card">
+                  <div class="dash-card-head"><strong>Stock del club</strong><span>Ejemplo</span></div>
+                  <div class="stock-item"><span class="stock-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="m4.5 7.8 7.5 4.4 7.5-4.4M12 12.2V21"/></svg></span><span class="stock-info"><strong>Agua mineral</strong><small>Almacén · botellas</small></span><span class="stock-count">42<small>En stock</small></span></div>
+                  <div class="stock-item"><span class="stock-icon" style="background:var(--amber-soft);color:var(--amber)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8l1 4v11H7V8l1-4Z"/><path d="M7 9h10m-8-5v5m6-5v5"/></svg></span><span class="stock-info"><strong>Refresco de cola</strong><small>Bar · mínimo 10</small></span><span class="stock-count" style="color:var(--amber)">06<small>Por reponer</small></span></div>
+                  <div class="stock-item"><span class="stock-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M5 7h14v13H5zM8 7V4h8v3M8 11h8M8 15h5"/></svg></span><span class="stock-info"><strong>Café molido</strong><small>Bar · paquetes</small></span><span class="stock-count">18<small>En stock</small></span></div>
+                </div>
+                <div class="dash-card">
+                  <div class="dash-card-head"><strong>Últimos movimientos</strong><span>Demo</span></div>
+                  <div class="movement"><span class="move-icon in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5m-7 7 7-7 7 7"/></svg></span><span class="move-info"><strong>Reposición</strong><small>Agua mineral</small></span><span class="move-value">+24</span></div>
+                  <div class="movement"><span class="move-icon out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14m-7-7 7 7 7-7"/></svg></span><span class="move-info"><strong>Venta a socio</strong><small>Agua mineral</small></span><span class="move-value negative">−3</span></div>
+                  <div class="dash-foot"><span>Compra añadida al historial</span><strong>Stock actualizado</strong></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="terminal-chip" aria-label="Detalle visual inspirado en Linux"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 8-4 4 4 4m8-8 4 4-4 4m-2-11-4 14"/></svg><code><b>club@tuclub</b>:~$ orden --stock</code></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="signal-band" aria-label="Áreas de gestión de TUCLUB">
+      <div class="wrap signal-list">
+        <span class="signal-label">Todo conectado</span>
+        <span class="signal-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20v-1a6 6 0 0 1 12 0v1m2-12a3 3 0 0 1 0 6m1 2a5 5 0 0 1 3 4v1"/></svg>Socios</span>
+        <span class="signal-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4m8-4v4M4 10h16m-11 4h2m3 0h2"/></svg>Cuotas</span>
+        <span class="signal-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5M3 16l9 5 9-5"/></svg>Stock</span>
+        <span class="signal-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.1 11.2a2 2 0 0 0 2 1.6h8.8a2 2 0 0 0 2-1.6L21 8H6"/><circle cx="10" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg>Ventas</span>
+      </div>
+    </div>
+
+    <section class="content-section" id="funciona" aria-labelledby="flow-title">
+      <div class="wrap">
+        <div class="section-head">
+          <span class="kicker">Un flujo fácil de seguir</span>
+          <h2 class="section-title" id="flow-title">De una venta al stock actualizado.</h2>
+          <p class="section-lede">TUCLUB conecta la actividad del club para que no tengas que reconstruir cada movimiento a mano.</p>
+        </div>
+        <div class="flow-wrap">
+          <article class="flow-card"><div class="flow-top"><span class="flow-number">PASO 01</span><span class="flow-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20v-1a6 6 0 0 1 12 0v1m4-13v6m-3-3h6"/></svg></span></div><h3>Ten a tus socios a mano</h3><p>Guarda sus fichas, cuotas y el <strong>historial de compras</strong> en un mismo sitio.</p></article>
+          <article class="flow-card"><div class="flow-top"><span class="flow-number">PASO 02</span><span class="flow-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.1 11.2a2 2 0 0 0 2 1.6h8.8a2 2 0 0 0 2-1.6L21 8H6"/><circle cx="10" cy="20" r="1"/><circle cx="18" cy="20" r="1"/><path d="M12 7v6m-3-3h6"/></svg></span></div><h3>Registra la venta</h3><p>Asocia los productos vendidos a un socio y consulta si la venta está <strong>pagada o pendiente</strong>.</p></article>
+          <article class="flow-card"><div class="flow-top"><span class="flow-number">PASO 03</span><span class="flow-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5m-18 4 9 5 9-5M12 13v4"/></svg></span></div><h3>El stock se actualiza</h3><p>La cantidad vendida se descuenta de las existencias y el movimiento queda <strong>registrado en el producto</strong>.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-dark" id="gestion" aria-labelledby="stock-title">
+      <div class="wrap dark-grid">
+        <div class="dark-copy">
+          <span class="kicker">Con los pies en el almacén</span>
+          <h2 id="stock-title">Menos vueltas para saber qué queda.</h2>
+          <p>Da de alta productos, añade la cantidad inicial y define un mínimo. Cuando un producto se acerca a ese nivel, aparece entre los que toca reponer.</p>
+          <ul class="feature-list">
+            <li><span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></span><span><strong class="dark-emphasis">Entradas y reposición</strong> con cantidad, fecha y nota del movimiento.</span></li>
+            <li><span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></span><span><strong class="dark-emphasis">Avisos de stock bajo</strong> según el mínimo que configures.</span></li>
+            <li><span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></span><span><strong class="dark-emphasis">Coste y precio por producto</strong>, con consulta del valor del stock a coste.</span></li>
+          </ul>
+        </div>
+        <div class="terminal-window" aria-label="Ilustración de movimientos del club, con datos de ejemplo">
+          <div class="terminal-top"><i></i><i></i><i></i><span>registro-de-movimientos — datos de muestra</span></div>
+          <div class="terminal-body">
+            <div class="terminal-line"><span class="terminal-prompt">club@tuclub:~$</span><span class="terminal-cmd">resumen --stock</span></div>
+            <div class="terminal-output">productos por debajo del mínimo: <span class="attention">3</span></div>
+            <div class="terminal-line"><span class="terminal-prompt">club@tuclub:~$</span><span class="terminal-cmd">movimientos --hoy</span></div>
+            <div class="terminal-output"><span class="positive">+ reposición</span> · Agua mineral · almacén<br><span>− venta</span> · Agua mineral · socio<br><span class="positive">+ reposición</span> · Café molido · bar</div>
+            <div class="terminal-line"><span class="terminal-prompt">club@tuclub:~$</span><span class="terminal-cmd">estado --club</span></div>
+            <div class="terminal-output">socios / cuotas / ventas / stock<br><span class="positive">todo en el mismo flujo.</span></div>
+            <div class="terminal-status"><span class="status-dot"></span> VISTA CONCEPTUAL — NO SON DATOS REALES</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="content-section features-section" aria-labelledby="overview-title">
+      <div class="wrap feature-layout">
+        <div class="feature-copy">
+          <span class="kicker">Una vista más clara</span>
+          <h2 id="overview-title">También las cuotas y los cobros cuentan.</h2>
+          <p>El resumen reúne información útil para el día a día: socios al corriente, cuotas pendientes, productos por reponer, últimas ventas y ventas aún por cobrar.</p>
+          <div class="feature-points">
+            <div class="feature-point"><strong>Socios y cuotas</strong><span>Consulta estados, vencimientos e historial de compras.</span></div>
+            <div class="feature-point"><strong>Ventas del club</strong><span>Revisa ventas pagadas o pendientes y su importe.</span></div>
+            <div class="feature-point"><strong>Valor del stock</strong><span>Consulta el valor de los productos calculado a coste.</span></div>
+            <div class="feature-point"><strong>Copias y listados</strong><span>Descarga listados CSV y una copia que luego puedes restaurar.</span></div>
+          </div>
+        </div>
+        <div class="summary-card" aria-label="Representación conceptual del resumen de TUCLUB, con datos de ejemplo">
+          <div class="summary-header"><strong>Resumen del club</strong><span>MOCKUP · DATOS DEMO</span></div>
+          <div class="summary-tile">
+            <div class="tile-top"><div><span class="tile-label">Cuotas pendientes</span><div class="tile-value">A revisar</div></div><span class="pill">Por cobrar</span></div>
+            <div class="tile-hint">Consulta las cuotas vencidas o próximas a vencer.</div>
+          </div>
+          <div class="summary-tile">
+            <div class="tile-top"><div><span class="tile-label">Ingresos de cuotas</span><div class="tile-value" style="font-size:22px">Actividad del club</div></div><span class="pill green">Resumen</span></div>
+            <div class="mini-bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          </div>
+          <div class="summary-tile">
+            <div class="backup-row"><span class="backup-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M5 17v3h14v-3"/></svg></span><span class="backup-copy"><strong>Descarga una copia de seguridad</strong><small>Guarda y restaura los datos del club.</small></span><span class="backup-arrow" aria-hidden="true">›</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="different" id="diferente" aria-labelledby="different-title">
+      <div class="wrap">
+        <div class="different-top">
+          <div><span class="kicker">Una identidad propia</span><h2 id="different-title">No es solo inventario.<br>Es la vida del club.</h2></div>
+          <p>Una forma de contar TUCLUB con más personalidad y menos frases de plantilla.</p>
+        </div>
+        <div class="advice-grid">
+          <article class="advice-card"><span class="advice-number">01</span><h3>Enseña el recorrido real</h3><p>Cuenta la historia completa: socio, venta y stock actualizado. Esa conexión es más memorable que una lista genérica de funciones.</p></article>
+          <article class="advice-card"><span class="advice-number">02</span><h3>Habla como habla tu club</h3><p>Usa ejemplos de cuotas, bar, almacén y reposiciones. Una identidad propia se construye con detalles concretos, no con palabras grandilocuentes.</p></article>
+          <article class="advice-card"><span class="advice-number">03</span><h3>Demuestra, no prometas</h3><p>Cuando puedas, añade una captura real, una historia de un club y resultados comprobables. Evita cifras inventadas y promesas de “control total”.</p></article>
+        </div>
+        <div class="advice-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v2m0 14v2M3 12h2m14 0h2M5.6 5.6 7 7m10 10 1.4 1.4m0-12.8L17 7M7 17l-1.4 1.4"/><circle cx="12" cy="12" r="4"/></svg><span><strong>Un toque Linux, sin disfraz:</strong> terminales, estados claros y sensación de control; el resto, simple y limpio como la interfaz que ya tiene TUCLUB.</span></div>
+      </div>
+    </section>
+
+    <section class="account-section" aria-labelledby="account-title">
+      <div class="wrap">
+        <div class="account-panel">
+          <div class="account-copy"><span class="kicker">Tu club, en marcha</span><h2 id="account-title">Que cada movimiento encuentre su sitio.</h2><p>Entra en TUCLUB para organizar socios, cuotas, ventas y existencias desde la app.</p></div>
+          <div class="account-action"><a class="button" href="https://00010-0.github.io/supasu/#resumen" target="_blank" rel="noopener noreferrer">Abrir la aplicación <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg></a></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="faq" aria-labelledby="faq-title">
+      <div class="wrap faq-grid">
+        <div class="faq-intro"><span class="kicker">Lo esencial</span><h2 id="faq-title">Claro antes de entrar.</h2><p>Una presentación honesta de lo que hace TUCLUB hoy.</p></div>
+        <div class="faq-list">
+          <details><summary>¿TUCLUB es un programa de contabilidad?</summary><p>No es un sistema de contabilidad completa. Ayuda a organizar la operativa del club: socios, cuotas, productos, ventas, cobros pendientes y valor del stock.</p></details>
+          <details><summary>¿Qué ocurre con el stock cuando registro una venta?</summary><p>La venta se vincula a un socio y a los productos vendidos. Al guardarla, TUCLUB descuenta las cantidades del stock y añade la compra al historial del socio.</p></details>
+          <details><summary>¿Puedo conservar una copia de mis datos?</summary><p>La app permite descargar una copia de seguridad y restaurarla. También puedes exportar los listados de socios y stock en formato CSV.</p></details>
+          <details><summary>¿Puedo entrar desde otros navegadores?</summary><p>La app incluye creación de cuenta e inicio de sesión para acceder al club desde otros navegadores con el mismo correo y contraseña; necesita conexión a Internet para sincronizarse.</p></details>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="footer-row">
+        <div><a class="footer-brand" href="#inicio"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="m16 4 11 6.2v12.1L16 28 5 22.3V10.2L16 4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m5.5 10.5 10.5 6.1 10.5-6.1M16 16.7V28" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span>TUCLUB</a><p class="footer-note">Gestión del club, con el stock en orden.</p></div>
+        <nav class="footer-links" aria-label="Enlaces del pie de página"><a href="#funciona">Cómo funciona</a><a href="#diferente">Ideas para destacar</a><a href="https://00010-0.github.io/supasu/#resumen" target="_blank" rel="noopener noreferrer">Abrir la app ↗</a></nav>
+      </div>
+      <p class="disclaimer">La vista del panel en esta página es ilustrativa y usa datos de ejemplo. TUCLUB facilita la organización diaria del club; no sustituye un sistema de contabilidad profesional.</p>
+    </div>
+  </footer>
+  <script>
+    (() => {
+      const toggle = document.querySelector('.menu-toggle');
+      const nav = document.querySelector('#nav-links');
+      if (!toggle || !nav) return;
+      const closeMenu = () => {
+        nav.classList.remove('open');
+        toggle.setAttribute('aria-expanded', 'false');
+        toggle.setAttribute('aria-label', 'Abrir menú');
+      };
+      toggle.addEventListener('click', () => {
+        const open = toggle.getAttribute('aria-expanded') !== 'true';
+        toggle.setAttribute('aria-expanded', String(open));
+        toggle.setAttribute('aria-label', open ? 'Cerrar menú' : 'Abrir menú');
+        nav.classList.toggle('open', open);
+      });
+      nav.querySelectorAll('a').forEach(link => link.addEventListener('click', closeMenu));
+      document.addEventListener('keydown', event => { if (event.key === 'Escape') closeMenu(); });
+      window.addEventListener('resize', () => { if (window.innerWidth > 700) closeMenu(); });
+    })();
+  </script>
+</body>
+</html>
